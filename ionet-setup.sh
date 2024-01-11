@@ -3,20 +3,10 @@
 set -euxo pipefail
 
 export DEBIAN_FRONTEND=noninteractive
-sudo dpkg --set-selections <<< "cloud-init hold" || true
+sudo dpkg --set-selections <<< "cloud-init install" || true
 
-# Detect if an Nvidia GPU is present
-NVIDIA_PRESENT=$(lspci | grep -i nvidia || true)
-
-# Only proceed with Nvidia-specific steps if an Nvidia device is detected
-if [[ -z "$NVIDIA_PRESENT" ]]; then
-    echo "No NVIDIA device detected on this system."
-else
-# Check if nvidia-smi is available and working
-    if command -v nvidia-smi &>/dev/null && nvidia-smi &>/dev/null; then
-        echo "CUDA drivers already installed as nvidia-smi works."
-    else
-        # Detect OS
+# Set Gloabal Variables
+    # Detect OS
         OS="$(uname)"
         case $OS in
             "Linux")
@@ -29,7 +19,21 @@ else
                     echo "Your Linux distribution is not supported."
                     exit 1
                 fi
-                
+                ;;
+        esac
+
+# Detect if an Nvidia GPU is present
+NVIDIA_PRESENT=$(lspci | grep -i nvidia || true)
+
+# Only proceed with Nvidia-specific steps if an Nvidia device is detected
+if [[ -z "$NVIDIA_PRESENT" ]]; then
+    echo "No NVIDIA device detected on this system."
+else
+# Check if nvidia-smi is available and working
+    if command -v nvidia-smi &>/dev/null; then
+        echo "CUDA drivers already installed as nvidia-smi works."
+    else
+
                 # Depending on Distro
                 case $DISTRO in
                     "ubuntu")
@@ -38,17 +42,17 @@ else
                                 # Commands specific to Ubuntu 20.04
                                 sudo -- sh -c 'apt-get update; apt-get upgrade -y; apt-get autoremove -y; apt-get autoclean -y'
                                 sudo -- sh -c 'apt-get update; apt-get upgrade -y; apt-get autoremove -y; apt-get autoclean -y'
-                                sudo apt-get install linux-headers-$(uname -r) -y
-                                sudo apt-key del 7fa2af80
-                                sudo apt-get install build-essential cmake unzip pkg-config software-properties-common ubuntu-drivers-common -y
-                                sudo apt-get install libxmu-dev libxi-dev libglu1-mesa libglu1-mesa-dev -y || true
-                                sudo apt-get install libjpeg-dev libpng-dev libtiff-dev -y || true
-                                sudo apt-get install libavcodec-dev libavformat-dev libswscale-dev libv4l-dev -y || true
-                                sudo apt-get install libxvidcore-dev libx264-dev -y || true
-                                sudo apt-get install libopenblas-dev libatlas-base-dev liblapack-dev gfortran -y || true
-                                sudo apt-get install libhdf5-serial-dev -y || true
-                                sudo apt-get install python3-dev python3-tk python-imaging-tk curl cuda-keyring gnupg-agent dirmngr alsa-utils -y || true
-                                sudo apt-get install libgtk-3-dev -y || true
+                                sudo apt install linux-headers-$(uname -r) -y
+                                sudo apt del 7fa2af80
+                                sudo apt install build-essential cmake gpg unzip pkg-config software-properties-common ubuntu-drivers-common -y
+                                sudo apt install libxmu-dev libxi-dev libglu1-mesa libglu1-mesa-dev -y || true
+                                sudo apt install libjpeg-dev libpng-dev libtiff-dev -y || true
+                                sudo apt install libavcodec-dev libavformat-dev libswscale-dev libv4l-dev -y || true
+                                sudo apt install libxvidcore-dev libx264-dev -y || true
+                                sudo apt install libopenblas-dev libatlas-base-dev liblapack-dev gfortran -y || true
+                                sudo apt install libhdf5-serial-dev -y || true
+                                sudo apt install python3-dev python3-tk python-imaging-tk curl cuda-keyring gnupg-agent dirmngr alsa-utils -y || true
+                                sudo apt install libgtk-3-dev -y || true
                                 sudo apt update
                                 sudo dirmngr </dev/null
                                 if sudo apt-add-repository -y ppa:graphics-drivers/ppa && sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys FCAE110B1118213C; then
@@ -64,10 +68,9 @@ else
                                 sudo apt update
                                 wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-keyring_1.1-1_all.deb
                                 sudo dpkg -i cuda-keyring_1.1-1_all.deb
-                                sudo apt-get update
-                                sudo apt-get -y install cuda-toolkit
-                                export LD_LIBRARY_PATH=/usr/local/cuda-12.2/lib64\
-                                    ${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
+                                sudo apt update
+                                sudo apt -y install cuda-toolkit
+                                export LD_LIBRARY_PATH=/usr/local/cuda-12.2/lib64:${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
                                 sudo apt-get update
                                 ;;
                             
@@ -75,17 +78,17 @@ else
                                 # Commands specific to Ubuntu 22.04
                                 sudo -- sh -c 'apt-get update; apt-get upgrade -y; apt-get autoremove -y; apt-get autoclean -y'
                                 sudo -- sh -c 'apt-get update; apt-get upgrade -y; apt-get autoremove -y; apt-get autoclean -y'
-                                sudo apt-get install linux-headers-$(uname -r) -y
+                                sudo apt install linux-headers-$(uname -r) -y
                                 sudo apt-key del 7fa2af80
-                                sudo apt-get install build-essential cmake unzip pkg-config software-properties-common ubuntu-drivers-common -y
-                                sudo apt-get install libxmu-dev libxi-dev libglu1-mesa libglu1-mesa-dev -y
-                                sudo apt-get install libjpeg-dev libpng-dev libtiff-dev -y 
-                                sudo apt-get install libavcodec-dev libavformat-dev libswscale-dev libv4l-dev -y 
-                                sudo apt-get install libxvidcore-dev libx264-dev -y
-                                sudo apt-get install libopenblas-dev libatlas-base-dev liblapack-dev gfortran -y 
-                                sudo apt-get install libhdf5-serial-dev -y 
-                                sudo apt-get install python3-dev python3-tk curl gnupg-agent dirmngr alsa-utils -y
-                                sudo apt-get install libgtk-3-dev -y 
+                                sudo apt install build-essential cmake gpg unzip pkg-config software-properties-common ubuntu-drivers-common -y
+                                sudo apt install libxmu-dev libxi-dev libglu1-mesa libglu1-mesa-dev -y
+                                sudo apt install libjpeg-dev libpng-dev libtiff-dev -y 
+                                sudo apt install libavcodec-dev libavformat-dev libswscale-dev libv4l-dev -y 
+                                sudo apt install libxvidcore-dev libx264-dev -y
+                                sudo apt install libopenblas-dev libatlas-base-dev liblapack-dev gfortran -y 
+                                sudo apt install libhdf5-serial-dev -y 
+                                sudo apt install python3-dev python3-tk curl gnupg-agent dirmngr alsa-utils -y
+                                sudo apt install libgtk-3-dev -y 
                                 sudo apt update
                                 sudo dirmngr </dev/null
                                 if sudo apt-add-repository -y ppa:graphics-drivers/ppa && sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys FCAE110B1118213C; then
@@ -101,11 +104,10 @@ else
                                 sudo apt update
                                 wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/cuda-keyring_1.1-1_all.deb
                                 sudo dpkg -i cuda-keyring_1.1-1_all.deb
-                                sudo apt-get update
-                                sudo apt-get -y install cuda-toolkit
-                                export LD_LIBRARY_PATH=/usr/local/cuda-12.2/lib64\
-                                    ${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
-                                sudo apt-get update
+                                sudo apt update
+                                sudo apt -y install cuda-toolkit
+                                export LD_LIBRARY_PATH=/usr/local/cuda-12.2/lib64:${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
+                                sudo apt update
                                 ;;
 
                             "18.04")
@@ -113,25 +115,24 @@ else
                                 sudo -- sh -c 'apt-get update; apt-get upgrade -y; apt-get autoremove -y; apt-get autoclean -y'
                                 sudo apt-get install linux-headers-$(uname -r) -y
                                 sudo apt-key del 7fa2af80
-                                sudo apt-get install build-essential cmake unzip pkg-config software-properties-common ubuntu-drivers-common alsa-utils -y
-                                sudo apt-get install libxmu-dev libxi-dev libglu1-mesa libglu1-mesa-dev -y || true
-                                sudo apt-get install libjpeg-dev libpng-dev libtiff-dev -y || true
-                                sudo apt-get install libavcodec-dev libavformat-dev libswscale-dev libv4l-dev -y || true
-                                sudo apt-get install libxvidcore-dev libx264-dev -y || true
-                                sudo apt-get install libopenblas-dev libatlas-base-dev liblapack-dev gfortran -y || true
-                                sudo apt-get install libhdf5-serial-dev -y || true
-                                sudo apt-get install python3-dev python3-tk python-imaging-tk curl cuda-keyring -y || true
-                                sudo apt-get install libgtk-3-dev -y || true
+                                sudo apt install build-essential cmake gpg unzip pkg-config software-properties-common ubuntu-drivers-common alsa-utils -y
+                                sudo apt install libxmu-dev libxi-dev libglu1-mesa libglu1-mesa-dev -y || true
+                                sudo apt install libjpeg-dev libpng-dev libtiff-dev -y || true
+                                sudo apt install libavcodec-dev libavformat-dev libswscale-dev libv4l-dev -y || true
+                                sudo apt install libxvidcore-dev libx264-dev -y || true
+                                sudo apt install libopenblas-dev libatlas-base-dev liblapack-dev gfortran -y || true
+                                sudo apt install libhdf5-serial-dev -y || true
+                                sudo apt install python3-dev python3-tk python-imaging-tk curl cuda-keyring -y || true
+                                sudo apt install libgtk-3-dev -y || true
                                 sudo apt update
                                 sudo ubuntu-drivers install
                                 sudo apt update
                                 wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/cuda-keyring_1.1-1_all.deb
                                 sudo dpkg -i cuda-keyring_1.1-1_all.deb
-                                sudo apt-get update
-                                sudo apt-get -y install cuda-toolkit
-                                export LD_LIBRARY_PATH=/usr/local/cuda-12.2/lib64\
-                                    ${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
-                                sudo apt-get update
+                                sudo apt update
+                                sudo apt -y install cuda-toolkit
+                                export LD_LIBRARY_PATH=/usr/local/cuda-12.2/lib64:${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
+                                sudo apt update
                                 ;;
 
                             *)
@@ -153,7 +154,7 @@ else
                                 sudo apt install nvidia-cuda-dev nvidia-cuda-toolkit
                                 sudo apt update
                                 ;;
-                            
+
                             *)
                                 echo "This version of Debian is not supported in this script."
                                 exit 1
@@ -165,9 +166,7 @@ else
                         echo "Your Linux distribution is not supported."
                         exit 1
                         ;;
-                esac
-                ;;
-            
+
             "Windows_NT")
                 # For Windows Subsystem for Linux (WSL) with Ubuntu
                 if grep -q Microsoft /proc/version; then
@@ -186,7 +185,8 @@ else
                 exit 1
                 ;;
         esac
-
+	echo "System will now reboot !!! Please re-run this script after restart to complete installation !"
+ 	sleep 5s
         sudo reboot
     fi
 fi
@@ -200,31 +200,79 @@ if command -v docker &>/dev/null; then
     echo "Docker is already installed."
 else
     echo "Docker is not installed. Proceeding with installations..."
-    sudo apt install docker.io -y
-    sudo systemctl restart docker 
-    # Optionally add installation steps for Docker and nvidia-docker if you have them
+# Install Docker-ce keyring
+sudo apt update
+sudo apt install ca-certificates curl gnupg
+sudo install -m 0755 -d /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+sudo chmod a+r /etc/apt/keyrings/docker.gpg
+
+# Add Docker-ce repository to Apt sources and install
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+  $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+sudo apt update
+sudo apt install docker-ce
 fi
 
-sudo curl -L "https://github.com/docker/compose/releases/download/v2.19.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/bin/docker-compose
-sudo chmod +x /usr/bin/docker-compose
+# Check if docker-compose is installed
+if command -v docker-compose &>/dev/null; then
+    echo "Docker-compoose is already installed."
+else
+    echo "Docker-compose is not installed. Proceeding with installations..."
+
+# Install docker-compose subcommand
+sudo apt install docker-compose-plugin
+sudo ln -sv /usr/libexec/docker/cli-plugins/docker-compose /usr/bin/docker-compose
 docker-compose --version
 
-
+# Test / Install nvidia-docker
 if [[ ! -z "$NVIDIA_PRESENT" ]]; then
-    if sudo docker run --gpus all nvidia/cuda:11.0.3-base-ubuntu18.04 nvidia-smi &>/dev/null; then
+    if sudo docker run --gpus all nvidia/cuda:12.0.0-base-ubuntu$VERSION_ID nvidia-smi &>/dev/null; then
         echo "nvidia-docker is enabled and working. Exiting script."
     else
         echo "nvidia-docker does not seem to be enabled. Proceeding with installations..."
-        distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
-        curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | sudo apt-key add
-        curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.list | sudo tee /etc/apt/sources.list.d/nvidia-docker.list
+	# Refer to install guide: https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html#installing-with-apt
+        curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | sudo gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg \
+		&& curl -s -L https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list | \
+		sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' | \
+		sudo tee /etc/apt/sources.list.d/nvidia-container-toolkit.list
+  	
+   	# The nvidia-ctk command modifies the /etc/docker/daemon.json file on the host. 
+    	# The file is updated so that Docker can use the NVIDIA Container Runtime.
+      	sudo nvidia-ctk runtime configure --runtime=docker 
         sudo apt-get update && sudo apt-get install -y nvidia-container-toolkit
         sudo systemctl restart docker 
-        sudo docker run --gpus all nvidia/cuda:11.0.3-base-ubuntu18.04 nvidia-smi
+
+# Install/Test Docker NVIDIA Image for Active Distro
+ 	case $DISTRO in
+	    "ubuntu")
+            case $VERSION in
+                	"22.04")
+			        sudo docker run --gpus all nvidia/cuda:12.0.0-base-ubuntu22.04 nvidia-smi
+			        echo "Installation successful !"
+			        ;;
+            esac
+	    ;;
+		        "20.04")
+			        sudo docker run --gpus all nvidia/cuda:12.0.0-base-ubuntu20.04 nvidia-smi
+			        echo "Installation successful !"
+			        ;;
+
+                	"18.04")
+			        sudo docker run --gpus all nvidia/cuda:12.0.0-base-ubuntu18.04 nvidia-smi
+			        echo "Installation successful !"
+			        ;;
+		        *)
+			        echo "Your OS is not supported"
+			        exit 1
+			        ;;
+        esac
     fi
 fi
 
-sudo dpkg --set-selections <<< "cloud-init install" || true
+# Add docker group and user to group docker
 sudo groupadd docker || true
 sudo usermod -aG docker $USER || true
 newgrp docker || true
