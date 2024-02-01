@@ -249,7 +249,7 @@ if [[ ! -z "$NVIDIA_PRESENT" ]]; then
         sudo docker run --gpus all nvidia/cuda:11.0.3-base-ubuntu18.04 nvidia-smi
     fi
 fi
-
+sudo apt-mark hold nvidia* libnvidia*
 # Add docker group and user to group docker
 sudo groupadd docker || true
 sudo usermod -aG docker $USER || true
