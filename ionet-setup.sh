@@ -254,3 +254,28 @@ sudo apt-mark hold nvidia* libnvidia*
 sudo groupadd docker || true
 sudo usermod -aG docker $USER || true
 newgrp docker || true
+# Workaround for NVIDIA Docker Issue
+echo "Applying workaround for NVIDIA Docker issue as per https://github.com/NVIDIA/nvidia-docker/issues/1730"
+# Summary of issue and workaround:
+# The issue arises when the host performs daemon-reload, which may cause containers using systemd to lose access to NVIDIA GPUs.
+# To check if affected, run `sudo systemctl daemon-reload` on the host, then check GPU access in the container with `nvidia-smi`.
+# If affected, proceed with the workaround below.
+
+# Workaround Steps:
+# Disable cgroups for Docker containers to prevent the issue.
+# Edit the Docker daemon configuration.
+sudo bash -c 'cat <<EOF > /etc/docker/daemon.json
+{
+   "runtimes": {
+       "nvidia": {
+           "path": "nvidia-container-runtime",
+           "runtimeArgs": []
+       }
+   },
+   "exec-opts": ["native.cgroupdriver=cgroupfs"]
+}
+EOF'
+
+# Restart Docker to apply changes.
+sudo systemctl restart docker
+echo "Workaround applied. Docker has been configured to use 'cgroupfs' as the cgroup driver."
