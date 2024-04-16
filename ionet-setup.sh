@@ -2,8 +2,10 @@
 
 set -euxo pipefail
 
+
 export DEBIAN_FRONTEND=noninteractive
-sudo dpkg --set-selections <<< "cloud-init install" || true
+
+# @dev Removed the selection state of `cloud-init` package, as it is dispensable and prevents errors on other Distros
 
 # Set Gloabal Variables
     # Detect OS
@@ -170,6 +172,34 @@ else
                         exit 1
                         ;;
 
+		     # @dev Added the following code lines to install dependencies in Fedora distros
+		     "fedora")
+                        case $VERSION in
+                            "38"|"39")
+                                # Commands specific to Fedora
+				                # @dev Remove uncompatible versions of docker
+                                sudo dnf remove moby-engine -y || true
+                                sudo dnf update -y
+                                sudo dnf install https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm -y || true
+                                sudo dnf install https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm -y || true
+                                sudo dnf makecache -y
+                                sudo dnf update -y
+                                sudo dnf install akmod-nvidia xorg-x11-drv-nvidia-cuda -y || true
+                                sudo dnf autoremove -y
+                                ;;
+
+                            *)
+                                echo "This version of Fedora is not supported in this script."
+                                exit 1
+                                ;;
+                        esac
+                        ;;
+
+                    *)
+                        echo "Your Linux distribution is not supported."
+                        exit 1
+                        ;;
+		     
             "Windows_NT")
                 # For Windows Subsystem for Linux (WSL) with Ubuntu
                 if grep -q Microsoft /proc/version; then
@@ -201,6 +231,17 @@ fi
 # Check if Docker is installed
 if command -v docker &>/dev/null; then
     echo "Docker is already installed."
+# @dev Added the following code lines to install dependencies in Fedora distros
+elif [["$DISTRO" == "fedora"]]; then
+    echo "Docker is not installed. Proceeding with installations..."
+    sudo dnf config-manager --add-repo https://download.docker.com/linux/fedora/docker-ce.repo || true
+    sudo dnf update -y || true
+    sudo dnf install docker-ce docker-ce-cli containerd.io docker-compose-plugin -y || true
+    # @dev One assumes that if docker isn't installed, we'll install every docker related dependecies
+    curl -s -L https://nvidia.github.io/libnvidia-container/centos8/libnvidia-container.repo | sudo tee /etc/yum.repos.d/nvidia-container-toolkit.repo || true
+    sudo dnf update -y || true
+    sudo dnf install nvidia-docker2 -y || true
+    sudo dnf autoremove -y
 else
     echo "Docker is not installed. Proceeding with installations..."
     # Install Docker-ce keyring
@@ -226,9 +267,15 @@ fi
 # Check if docker-compose is installed
 if command -v docker-compose &>/dev/null; then
     echo "Docker-compose is already installed."
+# @dev Added the following code lines to install dependencies in Fedora distros
+elif [["$DISTRO" == "fedora"]]; then
+    echo "Docker-compose is not installed. Proceeding with installations..."
+    sudo dnf config-manager --add-repo https://download.docker.com/linux/fedora/docker-ce.repo || true
+    sudo dnf update -y
+    sudo dnf install docker-compose-plugin -y || true
+    sudo dnf autoremove -y
 else
     echo "Docker-compose is not installed. Proceeding with installations..."
-
     # Install docker-compose subcommand
     sudo apt -y install docker-compose-plugin
     sudo ln -sv /usr/libexec/docker/cli-plugins/docker-compose /usr/bin/docker-compose
@@ -239,17 +286,27 @@ fi
 if [[ ! -z "$NVIDIA_PRESENT" ]]; then
     if sudo docker run --gpus all nvidia/cuda:11.0.3-base-ubuntu18.04 nvidia-smi &>/dev/null; then
         echo "nvidia-docker is enabled and working. Exiting script."
+    # @dev Added the following code lines to install dependencies in Fedora distros	
+    elif [["$DISTRO" == "fedora"]]; then
+        echo "nvidia-docker is not installed. Proceeding with installations..."
+	# @dev Tested the following repo and it works fine in Fedora 38 and 39
+        curl -s -L https://nvidia.github.io/libnvidia-container/centos8/libnvidia-container.repo | sudo tee /etc/yum.repos.d/nvidia-container-toolkit.repo || true
+        sudo dnf update -y || true
+        sudo dnf install nvidia-docker2 -y || true
+        sudo dnf autoremove -y
     else
         echo "nvidia-docker does not seem to be enabled. Proceeding with installations..."
         distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
         curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | sudo apt-key add
         curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.list | sudo tee /etc/apt/sources.list.d/nvidia-docker.list
         sudo apt-get update && sudo apt-get install -y nvidia-container-toolkit
-        sudo systemctl restart docker 
+        sudo systemctl restart docker
         sudo docker run --gpus all nvidia/cuda:11.0.3-base-ubuntu18.04 nvidia-smi
     fi
 fi
-sudo apt-mark hold nvidia* libnvidia*
+
+# @dev Removed the hold option for the apt package
+
 # Add docker group and user to group docker
 sudo groupadd docker || true
 sudo usermod -aG docker $USER || true

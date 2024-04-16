@@ -38,6 +38,7 @@ The `ionet-setup.sh` script performs a series of operations:
 
 - Ubuntu (20.04, 22.04, 18.04)
 - Debian (10, 11)
+- Fedora (38, 39)
 
 ## Contributions
 
