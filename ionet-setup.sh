@@ -4,7 +4,7 @@ set -euxo pipefail
 
 export DEBIAN_FRONTEND=noninteractive
 
-# @dev Removed the selection state of `cloud-init` package, as it is dispensable and prevents errors on other Distros
+sudo dpkg --set-selections <<< "cloud-init install" || true
 
 # Set Gloabal Variables
 # Detect OS
@@ -34,7 +34,7 @@ else
     if command -v nvidia-smi &>/dev/null; then
         echo "CUDA drivers already installed as nvidia-smi works."
         if [ "$DISTRO" = "fedora" ]; then
-            # @dev Remove uncompatible versions of docker
+            # @dev Remove incompatible versions of docker
             if command -v docker &>/dev/null; then
                 sudo dnf remove moby-engine -y || true
             fi
@@ -177,7 +177,7 @@ else
             case $VERSION in
             "38" | "39")
                 # Commands specific to Fedora
-                # @dev Remove uncompatible versions of docker
+                # @dev Remove incompatible versions of docker
                 if command -v docker &>/dev/null; then
                     sudo dnf remove moby-engine -y || true
                 fi
