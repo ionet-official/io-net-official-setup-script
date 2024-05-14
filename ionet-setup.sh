@@ -30,7 +30,7 @@ if [[ -z "$NVIDIA_PRESENT" ]]; then
     echo "No NVIDIA device detected on this system."
 else
 # Check if nvidia-smi is available and working
-    if command -v nvidia-smi &>/dev/null; then
+    if command -v nvidia-smi && nvidia-smi | grep CUDA | grep -vi 'n/a' &>/dev/null; then
         echo "CUDA drivers already installed as nvidia-smi works."
     else
 
