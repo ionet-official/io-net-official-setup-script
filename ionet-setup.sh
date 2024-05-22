@@ -32,6 +32,16 @@ else
 # Check if nvidia-smi is available and working
     if command -v nvidia-smi && nvidia-smi | grep CUDA | grep -vi 'n/a' &>/dev/null; then
         echo "CUDA drivers already installed as nvidia-smi works."
+
+        # Extract the CUDA version from nvidia-smi output and check if it meets the minimum requirement
+        cuda_version=$(nvidia-smi | grep "CUDA Version" | sed 's/.*CUDA Version: \([0-9]*\.[0-9]*\).*/\1/')
+        if [ "$(echo "$cuda_version >= 11.8" | bc -l)" -eq 1 ]; then
+            echo "CUDA version $cuda_version is installed and meets the minimum requirement of 11.8."
+        else
+            echo "CUDA version $cuda_version is installed but does not meet the minimum requirement of 11.8. Please upgrade CUDA."
+            exit 1
+        fi
+
     else
 
                 # Depending on Distro
@@ -74,7 +84,7 @@ else
                                 export LD_LIBRARY_PATH=/usr/local/cuda-12.2/lib64:${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
                                 sudo apt-get update
                                 ;;
-                            
+
                             "22.04")
                                 # Commands specific to Ubuntu 22.04
                                 sudo -- sh -c 'apt-get update; apt-get upgrade -y; apt-get autoremove -y; apt-get autoclean -y'
@@ -84,13 +94,13 @@ else
                                 sudo apt remove 7fa2af80 || true
                                 sudo apt install build-essential cmake gpg unzip pkg-config software-properties-common ubuntu-drivers-common -y
                                 sudo apt install libxmu-dev libxi-dev libglu1-mesa libglu1-mesa-dev -y
-                                sudo apt install libjpeg-dev libpng-dev libtiff-dev -y 
-                                sudo apt install libavcodec-dev libavformat-dev libswscale-dev libv4l-dev -y 
+                                sudo apt install libjpeg-dev libpng-dev libtiff-dev -y
+                                sudo apt install libavcodec-dev libavformat-dev libswscale-dev libv4l-dev -y
                                 sudo apt install libxvidcore-dev libx264-dev -y
-                                sudo apt install libopenblas-dev libatlas-base-dev liblapack-dev gfortran -y 
-                                sudo apt install libhdf5-serial-dev -y 
+                                sudo apt install libopenblas-dev libatlas-base-dev liblapack-dev gfortran -y
+                                sudo apt install libhdf5-serial-dev -y
                                 sudo apt install python3-dev python3-tk curl gnupg-agent dirmngr alsa-utils -y
-                                sudo apt install libgtk-3-dev -y 
+                                sudo apt install libgtk-3-dev -y
                                 sudo apt update -y
                                 sudo dirmngr </dev/null
                                 if sudo apt-add-repository -y ppa:graphics-drivers/ppa && sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys FCAE110B1118213C; then
@@ -144,7 +154,7 @@ else
                                 ;;
                         esac
                         ;;
-                    
+
                     "debian")
                         case $VERSION in
                             "10"|"11")
@@ -245,7 +255,7 @@ if [[ ! -z "$NVIDIA_PRESENT" ]]; then
         curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | sudo apt-key add
         curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.list | sudo tee /etc/apt/sources.list.d/nvidia-docker.list
         sudo apt-get update && sudo apt-get install -y nvidia-container-toolkit
-        sudo systemctl restart docker 
+        sudo systemctl restart docker
         sudo docker run --gpus all nvidia/cuda:11.0.3-base-ubuntu18.04 nvidia-smi
     fi
 fi
