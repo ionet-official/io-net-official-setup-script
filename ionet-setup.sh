@@ -263,17 +263,25 @@ echo "Applying workaround for NVIDIA Docker issue as per https://github.com/NVID
 # Workaround Steps:
 # Disable cgroups for Docker containers to prevent the issue.
 # Edit the Docker daemon configuration.
-sudo bash -c 'cat <<EOF > /etc/docker/daemon.json
-{
-   "runtimes": {
-       "nvidia": {
-           "path": "nvidia-container-runtime",
-           "runtimeArgs": []
-       }
-   },
-   "exec-opts": ["native.cgroupdriver=cgroupfs"]
-}
-EOF'
+sudo python3 <<END
+import json, pathlib, sys
+def update_key(dct: dict, key: str, value):
+    for item in key.split('.')[:-1]:
+        dct = dct.setdefault(item, {})
+    dct[key.split('.')[-1]] = value
+
+cfg = pathlib.Path('/etc/docker/daemon.json')
+try:
+    config = json.loads(cfg.read_text(errors='ignore') if cfg.exists() else '{}')
+    update_key(config, 'runtimes.nvidia.path', 'nvidia-container-runtime')
+    update_key(config, 'runtimes.nvidia.runtimeArgs', [])
+    update_key(config, 'exec-opts', ['native.cgroupdriver=cgroupfs'])
+    cfg.write_text(json.dumps(config, sort_keys=True, indent=4))
+except Exception as e:
+    sys.exit('Cannot modify docker config, reason: ' + str(e))
+else:
+    print('Docker settings modified successfully')
+END
 
 # Restart Docker to apply changes.
 sudo systemctl restart docker
