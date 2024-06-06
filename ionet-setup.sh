@@ -31,17 +31,17 @@ if [[ -z "$NVIDIA_PRESENT" ]]; then
 else
     # Check if nvidia-smi is available and working
     if command -v nvidia-smi && nvidia-smi | grep CUDA | grep -vi 'n/a' &>/dev/null; then
-        echo "CUDA drivers already installed as nvidia-smi works."
-
-        # Extract the CUDA version from nvidia-smi output
+        # Extract the CUDA version from the output of `nvidia-smi`.
         cuda_version=$(nvidia-smi | grep "CUDA Version" | sed 's/.*CUDA Version: \([0-9]*\.[0-9]*\).*/\1/')
 
-        # Minimum required CUDA version
+        # Define the minimum required CUDA version.
         min_version="11.8"
 
-        # Compare the extracted CUDA version with the minimum required version using sort and head
-        if printf '%s\n%s\n' "$cuda_version" "$min_version" | sort -V | head -n1 | grep -q "$min_version"; then
-            echo "CUDA version $cuda_version is installed and meets the minimum requirement of $min_version"
+        # Compare the CUDA version extracted with the minimum required version.
+        # Here, we sort the two versions and use `head` to get the lowest.
+        # If the lowest version is not the minimum version, it means the installed version is lower.
+        if [ "$(printf '%s\n%s' "$cuda_version" "$min_version" | sort -V | head -n1)" = "$min_version" ]; then
+            echo "CUDA version $cuda_version is installed and meets the minimum requirement of $min_version."
         else
             echo "CUDA version $cuda_version is installed but does not meet the minimum requirement of $min_version. Please upgrade CUDA."
             exit 1
