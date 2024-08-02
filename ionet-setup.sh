@@ -70,7 +70,7 @@ else
             fi
         done
 
-        echo "ECC check/update completed. System may need a reboot to finalize changes."
+        echo "ECC check/update completed. A Reboot is required to finalize changes."
 
     else
                 # Depending on Distro
