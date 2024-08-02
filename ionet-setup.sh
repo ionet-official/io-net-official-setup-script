@@ -46,6 +46,30 @@ else
             echo "CUDA version $cuda_version is installed but does not meet the minimum requirement of $min_version. Please upgrade CUDA."
             exit 1
         fi
+
+        # Check if ECC is enabled, and if so, disable it.
+        # Query the number of GPUs in the system
+        num_gpus=$(nvidia-smi --list-gpus | wc -l)
+
+        echo "Found $num_gpus GPUs in the system."
+
+        # Loop through each GPU and check/disable ECC
+        for (( gpu_index=0; gpu_index<num_gpus; gpu_index++ ))
+        do
+            echo "Checking ECC status for GPU $gpu_index..."
+
+            if nvidia-smi -i $gpu_index --query-gpu=ecc.mode.current --format=csv,noheader,nounits | grep -q "Enabled"; then
+                echo "ECC is enabled on GPU ${gpu_index}, attempting to disable..."
+                if sudo nvidia-smi -i $gpu_index --ecc-config=0; then
+                    echo "ECC has been disabled for GPU ${gpu_index}, A Reboot is required to apply changes."
+                else
+                    echo "Failed to disable ECC on GPU ${gpu_index}."
+                fi
+            else
+                echo "ECC is already disabled on GPU ${gpu_index}."
+            fi
+        done
+
     else
                 # Depending on Distro
                 case $DISTRO in
