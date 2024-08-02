@@ -70,8 +70,6 @@ else
             fi
         done
 
-        echo "ECC check/update completed. A Reboot is required to finalize changes."
-
     else
                 # Depending on Distro
                 case $DISTRO in
