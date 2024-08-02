@@ -61,7 +61,7 @@ else
             if nvidia-smi -i $gpu_index --query-gpu=ecc.mode.current --format=csv,noheader,nounits | grep -q "Enabled"; then
                 echo "ECC is enabled on GPU ${gpu_index}, attempting to disable..."
                 if sudo nvidia-smi -i $gpu_index --ecc-config=0; then
-                    echo "ECC has been disabled for GPU ${gpu_index}, a reboot may be required to apply changes."
+                    echo "ECC has been disabled for GPU ${gpu_index}, A Reboot is required to apply changes."
                 else
                     echo "Failed to disable ECC on GPU ${gpu_index}."
                 fi
