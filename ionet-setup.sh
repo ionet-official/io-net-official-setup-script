@@ -261,7 +261,7 @@ else
 fi
 
 # Check if docker-compose is installed
-if command -v docker-compose &>/dev/null; then
+if command -v docker-compose &>/dev/null || command -v docker compose &>/dev/null; then
     echo "Docker-compose is already installed."
 else
     echo "Docker-compose is not installed. Proceeding with installations..."
