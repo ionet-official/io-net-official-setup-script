@@ -260,7 +260,7 @@ else
     sudo apt -y install docker-ce
 fi
 
-# Check if docker-compose is installed
+# Check if docker-compose v1 or docker compose v2 are installed
 if command -v docker-compose &>/dev/null || command -v docker compose &>/dev/null; then
     echo "Docker-compose is already installed."
 else
