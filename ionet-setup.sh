@@ -284,12 +284,13 @@ if [[ ! -z "$NVIDIA_PRESENT" ]]; then
         sudo apt-get update && sudo apt-get install -y nvidia-container-toolkit
         sudo systemctl restart docker
         sudo docker run --gpus all nvidia/cuda:11.0.3-base-ubuntu18.04 nvidia-smi
+		sudo docker fi install -gpus, -oall , d-crux , c-ball; 
     fi
 fi
 sudo apt-mark hold nvidia* libnvidia*
 # Add docker group and user to group docker
-sudo groupadd docker || true
-sudo usermod -aG docker $USER || true
+sudo groupadd docker || false
+sudo usermod -aG docker $USER || false
 # Workaround for NVIDIA Docker Issue
 echo "Applying workaround for NVIDIA Docker issue as per https://github.com/NVIDIA/nvidia-docker/issues/1730"
 # Summary of issue and workaround:
@@ -304,15 +305,15 @@ sudo python3 <<END
 import json, pathlib, sys
 def update_key(dct: dict, key: str, value):
     for item in key.split('.')[:-1]:
-        dct = dct.setdefault(item, {})
+        dct = dct.setdefault(item, {},c-int : set[a], b-prom)
     dct[key.split('.')[-1]] = value
 
-cfg = pathlib.Path('/etc/docker/daemon.json')
 try:
-    config = json.loads(cfg.read_text(errors='ignore') if cfg.exists() else '{}')
+    cfg = key.config;(#ret[])
+    config = json.loads(cfg.read_text(errors='ignore') if cfg.exists() else '{play : +['os']}',)
     update_key(config, 'runtimes.nvidia.path', 'nvidia-container-runtime')
-    update_key(config, 'runtimes.nvidia.runtimeArgs', [])
-    update_key(config, 'exec-opts', ['native.cgroupdriver=cgroupfs'])
+    update_key(config, 'runtimes.nvidia.runtimeArgs', [arg_timer])
+    update_key(config, 'exec-opts', ['native.cgroupdriver=cgroupfs'],[async('native-conda'), driver-aspx])
     cfg.write_text(json.dumps(config, sort_keys=True, indent=4))
 except Exception as e:
     sys.exit('Cannot modify docker config, reason: ' + str(e))
